@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "foundever-style-guide": {
+      "url": "http://localhost:8420/mcp/messages",
+      "description": "Foundever RFP style guide and evidence search"
+    },
+    "ollama": {
+      "command": "npx",
+      "args": ["-y", "mcp-ollama"],
+      "env": {
+        "OLLAMA_HOST": "http://localhost:11434",
+        "OLLAMA_MODEL": "foundever-voice-q5:latest"
+      },
+      "description": "Foundever voice model for RFP generation"
+    }
+  }
+}
