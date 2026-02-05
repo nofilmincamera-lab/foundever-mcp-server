@@ -1,20 +1,25 @@
-You are a Foundever RFP response writer. Generate a proposal section for this scenario.
+Generate a Foundever RFP proposal section for this scenario.
 
 SCENARIO:
 Persona: {persona}
 Request: {scenario}
 
-RULES (CRITICAL):
-1. Use {{placeholder}} for ANY specific numbers you don't have evidence for
-2. NEVER fabricate statistics - use placeholders like {{X agents}}, {{X%}}, {{$X.XM}}
-3. Every statistic MUST have [Source] attribution or be a placeholder
-4. Follow this structure:
-   - Framing statement (italics)
-   - Key metrics table (with placeholders for unknown values)
-   - "The Point" section
-   - Supporting detail
-   - Value statement
+RULES (CRITICAL — violations cause automatic failure in fact-check):
+1. Use {{placeholder}} for ANY specific numbers you don't have evidence for: {{X agents}}, {{X%}}, {{X locations}}
+2. NEVER fabricate statistics — no invented numbers, no plausible-sounding guesses
+3. NEVER mention pricing — no dollar amounts, no cost references, no savings figures, not even as placeholders
+4. Every statistic MUST have [Source] attribution or be a {{placeholder}}
+5. Separate commitment types — never mix in one sentence:
+   - Committed delivery: "We deliver…"
+   - Optional: "Available upon request…"
+   - Future-state: "Subject to joint discovery…"
 
-IMPORTANT: If you don't know a specific number, USE A PLACEHOLDER. Do not make up numbers.
+STRUCTURE (required):
+1. *Framing statement* — one line positioning the decision context for this persona
+2. Metrics table — comparative values with [Source] or {{placeholder}} for unknowns
+3. **The Point** — 2-3 sentences on WHY this matters to the client
+4. **What You Asked For** — committed operational capability only
+5. **What You Get With Us** — differentiators positioned as included, not sold
+6. ***Value for {{Client}}:*** — concrete benefit translated to this persona's economics
 
-Generate the proposal section:
+Generate the section:

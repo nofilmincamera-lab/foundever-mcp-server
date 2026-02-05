@@ -2,7 +2,7 @@
 
 **Question:** When the MCP is called, does it load the embedder + Searcher + Enricher?
 
-**Short Answer:** NO - They are **lazy loaded** on first use, not at startup.
+**Short Answer:** YES - All models are **pre-loaded at startup** for instant tool calls.
 
 ---
 
@@ -13,20 +13,20 @@
 
 **What Loads:**
 ```python
-# Only lightweight imports
+# Phase 1: Lightweight imports
 ✅ config.py (static data, no models)
 ✅ Starlette HTTP server
 ✅ MCP protocol handlers
 ✅ Tool definitions (metadata only)
 
-# NOT loaded yet:
-❌ Embedder (E5-Mistral-7B) - 0 MB
-❌ Searcher (Qdrant client) - 0 MB
-❌ Enricher - 0 MB
+# Phase 2: Pre-load all models (NEW BEHAVIOR)
+✅ Embedder (E5-Mistral-7B) - 7-14 GB, ~10-30s
+✅ Searcher (Qdrant client) - 50 MB, ~0.5s
+✅ Enricher - 10 MB, ~0.1s
 ```
 
-**Memory Usage:** ~100-200 MB (Python + dependencies)
-**Startup Time:** ~1-2 seconds
+**Memory Usage:** ~7-14 GB (includes all models)
+**Startup Time:** ~10-30 seconds (includes model loading)
 
 ---
 
@@ -37,32 +37,18 @@
 ```
 Tool handler calls get_lazy_searcher()
               ↓
-_searcher is None? → Yes!
+_searcher already loaded? → Yes! (pre-loaded at startup)
               ↓
-logger.info("Initializing searcher (first use)...")
+Returns cached instance immediately
               ↓
-get_searcher() from search.py
-              ↓
-StyleGuideSearcher.__init__()
-              ↓
-    self.client = QdrantClient(...)  # Lightweight connection
-    self.embedder = get_embedder()   # HEAVY LOAD HERE
-              ↓
-StyleGuideEmbedder.__init__()
-              ↓
-    Load E5-Mistral-7B model
-    - AutoTokenizer.from_pretrained()
-    - AutoModel.from_pretrained()
-    - Move to GPU (if available)
-    - Set to eval mode
+Execute search query
 ```
 
 **Memory Impact:**
-- **Embedder:** ~7-14 GB VRAM/RAM (E5-Mistral-7B)
-- **Searcher:** ~50 MB (Qdrant client)
-- **Total:** ~7-14 GB first load
+- **Additional:** 0 MB (already loaded)
+- **Total:** Same as startup (~7-14 GB)
 
-**Load Time:** ~10-30 seconds (depends on GPU/CPU)
+**Load Time:** ~0 seconds (instant - models already in memory)
 
 ---
 
@@ -73,41 +59,33 @@ StyleGuideEmbedder.__init__()
 ```
 Tool handler calls get_lazy_enricher()
               ↓
-_enricher is None? → Yes!
+_enricher already loaded? → Yes! (pre-loaded at startup)
               ↓
-logger.info("Initializing enricher (first use)...")
+Returns cached instance immediately
               ↓
-get_enricher() from enrichment_engine.py
-              ↓
-StyleGuideEnricher.__init__()
-              ↓
-    self.searcher = get_searcher()  # Calls get_lazy_searcher()
-              ↓
-    If searcher not yet loaded:
-        → Loads Embedder + Searcher (see above)
-    If searcher already loaded:
-        → Reuses existing instance
+Execute enrichment logic
 ```
 
 **Memory Impact:**
-- **Enricher:** ~10 MB (Python object)
-- **Searcher:** 0 MB (reuses existing if already loaded)
-- **Embedder:** 0 MB (singleton, only loads once)
+- **Additional:** 0 MB (already loaded)
+- **Total:** Same as startup (~7-14 GB)
 
-**Load Time:** ~0.1 seconds (if searcher already loaded)
+**Load Time:** ~0 seconds (instant - models already in memory)
 
 ---
 
-### 4. Subsequent Tool Calls
+### 4. All Subsequent Tool Calls
 
 **What Happens:**
 ```
-get_lazy_searcher() → Returns existing _searcher (cached)
-get_lazy_enricher() → Returns existing _enricher (cached)
+get_lazy_searcher() → Returns existing _searcher (pre-loaded)
+get_lazy_enricher() → Returns existing _enricher (pre-loaded)
 ```
 
 **Memory Impact:** 0 MB additional
 **Load Time:** 0 seconds (instant)
+
+**Note:** Since all models are pre-loaded at startup, ALL tool calls after startup are instant.
 
 ---
 
@@ -260,18 +238,22 @@ Time: 5-30s (depends on Ollama generation speed)
 
 ---
 
-## Why Lazy Loading?
+## Why Pre-Loading? (Updated Behavior)
 
-**Problem without lazy loading:**
-- Server startup would take 10-30 seconds
-- Memory usage would be 7-14 GB from the start
-- Many tools don't need the embedder at all
+**Previous Behavior (Lazy Loading):**
+- ✅ Fast startup (1-2 seconds)
+- ✅ Low initial memory (~200 MB)
+- ❌ First tool call slow (10-30 seconds)
+- ❌ User waits for models to load
 
-**Solution with lazy loading:**
-- Server starts in 1-2 seconds
-- Memory starts at ~200 MB
-- Only loads heavy models when actually needed
-- Tools that don't need models are instant
+**Current Behavior (Pre-Loading):**
+- ✅ **ALL tool calls instant** (models ready)
+- ✅ Predictable startup time
+- ✅ No surprise delays during use
+- ❌ Slower startup (10-30 seconds)
+- ❌ Higher initial memory (7-14 GB)
+
+**Trade-off:** Slower startup for instant tool performance.
 
 ---
 
@@ -295,55 +277,58 @@ Time: 5-30s (depends on Ollama generation speed)
 
 ## Log Messages You'll See
 
-**Server startup:**
+**Server startup (NEW):**
 ```
-[mcp-style-guide] Starting MCP server on port 8420
-```
-
-**First search tool:**
-```
-[Searcher] Initializing searcher (first use)...
+[mcp-style-guide] Starting MCP server on http://0.0.0.0:8420
+[mcp-style-guide] MCP endpoint: http://0.0.0.0:8420/mcp/messages
+[mcp-style-guide] Health check: http://0.0.0.0:8420/health
+[mcp-style-guide]
+[mcp-style-guide] Pre-loading models (this may take 10-30 seconds)...
+[mcp-style-guide] ============================================================
+[mcp-style-guide] PRE-LOADING MODELS AT STARTUP
+[mcp-style-guide] ============================================================
+[mcp-style-guide] Loading Searcher + Embedder...
+[mcp-style-guide]   → E5-Mistral-7B (7-14 GB, ~10-30s)
+[mcp-style-guide]   → Qdrant Client (~50 MB, ~0.5s)
 [Embedder] Initializing on cuda
 [Embedder] Loading model: intfloat/e5-mistral-7b-instruct
 [Embedder] Model loaded. Embedding dim: 4096
 [Searcher] Connected to Qdrant at localhost:6333
+[mcp-style-guide] ✓ Searcher + Embedder loaded successfully
+[mcp-style-guide] Loading Enricher...
+[mcp-style-guide]   → Enrichment Engine (~10 MB, ~0.1s)
+[mcp-style-guide] ✓ Enricher loaded successfully
+[mcp-style-guide] ============================================================
+[mcp-style-guide] ALL MODELS PRE-LOADED - SERVER READY
+[mcp-style-guide] ============================================================
+[mcp-style-guide]
+[mcp-style-guide] Starting HTTP server...
 ```
 
-**First enrichment tool (if search not yet used):**
+**All tool calls:**
 ```
-[Enricher] Initializing enricher (first use)...
-[Searcher] Initializing searcher (first use)...
-[Embedder] Initializing on cuda
-... (same as above)
-```
-
-**Subsequent calls:**
-```
-(No initialization messages - uses cached instances)
+(No initialization messages - models already loaded at startup)
 ```
 
 ---
 
-## Summary
+## Summary (Updated Behavior)
 
 **At MCP Server Start:**
-- ❌ Embedder: NOT loaded
-- ❌ Searcher: NOT loaded
-- ❌ Enricher: NOT loaded
-- ✅ Config: Loaded (static data only)
+- ✅ Config: Loaded (static data)
+- ✅ Embedder: **PRE-LOADED** (7-14 GB, 10-30s)
+- ✅ Searcher: **PRE-LOADED** (50 MB, 0.5s)
+- ✅ Enricher: **PRE-LOADED** (10 MB, 0.1s)
 
-**At First Search Tool Call:**
-- ✅ Embedder: Loaded (7-14 GB, 10-30s)
-- ✅ Searcher: Loaded (50 MB, 0.5s)
-- ❌ Enricher: NOT loaded (unless enrichment tool)
-
-**At First Enrichment Tool Call:**
-- ✅ Embedder: Loaded if not already (or reuses cached)
-- ✅ Searcher: Loaded if not already (or reuses cached)
-- ✅ Enricher: Loaded (10 MB, 0.1s)
+**At First Tool Call (Any Tool):**
+- ✅ All models: **ALREADY LOADED** (instant access)
+- No loading delays
+- No initialization messages
 
 **All Subsequent Calls:**
-- Everything cached, instant access
+- ✅ Everything pre-loaded at startup
+- ✅ Instant access
+- ✅ No surprises
 
 ---
 

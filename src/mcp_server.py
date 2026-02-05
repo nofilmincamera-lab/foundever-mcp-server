@@ -52,25 +52,61 @@ from config import DB_CONFIG
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("mcp-style-guide")
 
-# Global instances (lazy loaded)
+# Global instances (pre-loaded at startup)
 _searcher = None
 _enricher = None
 
 
+def init_models():
+    """
+    Pre-load all models at server startup.
+
+    This ensures the first tool call is fast by loading:
+    - Embedder (E5-Mistral-7B): ~7-14 GB, 10-30 seconds
+    - Searcher (Qdrant client): ~50 MB, 0.5 seconds
+    - Enricher: ~10 MB, 0.1 seconds
+
+    Total startup time: ~10-30 seconds
+    Total memory: ~7-14 GB
+    """
+    global _searcher, _enricher
+
+    logger.info("=" * 60)
+    logger.info("PRE-LOADING MODELS AT STARTUP")
+    logger.info("=" * 60)
+
+    # Load Searcher (which also loads Embedder)
+    logger.info("Loading Searcher + Embedder...")
+    logger.info("  → E5-Mistral-7B (7-14 GB, ~10-30s)")
+    logger.info("  → Qdrant Client (~50 MB, ~0.5s)")
+    _searcher = get_searcher()
+    logger.info("✓ Searcher + Embedder loaded successfully")
+
+    # Load Enricher
+    logger.info("Loading Enricher...")
+    logger.info("  → Enrichment Engine (~10 MB, ~0.1s)")
+    _enricher = get_enricher(use_llm=False)
+    logger.info("✓ Enricher loaded successfully")
+
+    logger.info("=" * 60)
+    logger.info("ALL MODELS PRE-LOADED - SERVER READY")
+    logger.info("=" * 60)
+
+
 def get_lazy_searcher():
-    """Lazy load searcher to avoid startup delay."""
+    """Get searcher instance (pre-loaded at startup, so always available)."""
     global _searcher
     if _searcher is None:
-        logger.info("Initializing searcher (first use)...")
+        logger.warning("Searcher not pre-loaded! Loading now...")
         _searcher = get_searcher()
     return _searcher
 
 
 def get_lazy_enricher(use_llm: bool = False):
-    """Lazy load enricher."""
+    """Get enricher instance (pre-loaded at startup, so always available)."""
     global _enricher
     if _enricher is None:
-        logger.info("Initializing enricher (first use)...")
+        logger.warning("Enricher not pre-loaded! Loading now...")
         _enricher = get_enricher(use_llm=use_llm)
     return _enricher
 
@@ -3205,15 +3241,33 @@ def create_sse_app():
 
 def run_stdio():
     """Run MCP server over stdio (for local Claude Desktop)."""
+    logger.info("Starting MCP server in stdio mode")
+
+    # Pre-load all models before starting server
+    logger.info("")
+    logger.info("Pre-loading models (this may take 10-30 seconds)...")
+    init_models()
+    logger.info("")
+
+    logger.info("Starting stdio server...")
     asyncio.run(stdio_server(mcp_server))
 
 
 def run_http(host: str = "0.0.0.0", port: int = 8420):
     """Run MCP server over HTTP/SSE (for remote access)."""
-    app = create_sse_app()
     logger.info(f"Starting MCP server on http://{host}:{port}")
     logger.info(f"MCP endpoint: http://{host}:{port}/mcp/messages")
     logger.info(f"Health check: http://{host}:{port}/health")
+
+    # Pre-load all models before starting server
+    logger.info("")
+    logger.info("Pre-loading models (this may take 10-30 seconds)...")
+    init_models()
+    logger.info("")
+
+    # Create app and start server
+    app = create_sse_app()
+    logger.info("Starting HTTP server...")
     uvicorn.run(app, host=host, port=port, log_level="info")
 
 

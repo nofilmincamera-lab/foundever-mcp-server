@@ -1,9 +1,16 @@
-Review this content for fabricated or unsourced information.
+Review this proposal content for fabricated or unsourced information.
 
 CONTENT TO CHECK:
 {content}
 
-EVIDENCE THAT WAS ACTUALLY FOUND (if any):
+EVIDENCE ACTUALLY FOUND IN QDRANT (use this as ground truth — claims not supported here need [Source] or {{placeholder}}):
 {evidence}
 
-Check every statistic, percentage, count, and specific claim. Flag anything without proper [Source] attribution.
+Instructions:
+1. Check every statistic, percentage, count, and specific claim against the evidence above.
+2. Any number in the content that does not appear in the evidence and lacks [Source] attribution is suspect.
+3. Flag any pricing language — dollar amounts, cost references, savings figures, rate mentions.
+4. Verify proof tier usage: T0 claims must be qualified ("Foundever reports…"), T1+ must have [Source].
+5. Check commitment clarity: committed delivery, optional enhancements, and future-state must not be mixed in single sentences.
+
+Return your findings in the required JSON format.

@@ -1,12 +1,20 @@
-Based on these example claims about {topic}:
+Based on these evidence claims about {topic}:
 
 {claims}
 
 Generate a professional proposal section that:
-1. Uses evidence from the claims with [Source] attribution
-2. Follows Foundever style guide structure
-3. Uses {{placeholders}} for any unknowns
-4. Maintains practitioner voice (no marketing language)
-5. Connects features to client value
+
+1. Weaves evidence into the narrative with [Source] attribution on every claim
+2. Respects proof tiers:
+   - T0 (marketing): qualify with "Foundever reports…" — never state as fact
+   - T1 (vendor artifact): state directly with [Source]
+   - T2 (case study): lead with the proof — this is your strongest operational evidence
+   - T3 (third-party): name the validator — this is the strongest tier
+3. Uses {{placeholder}} for any data not present in the claims above — do not invent numbers to fill gaps
+4. Follows section architecture:
+   - Framing statement → Metrics table → The Point → What You Asked For → What You Get With Us → Value statement
+5. Uses comparative metrics ("vs. baseline", "improved from X to Y") rather than absolute claims
+6. Never mentions pricing — no dollar amounts, costs, savings, or rates
+7. Positions differentiators as included capabilities, not add-on services
 
 Output the enriched section:
