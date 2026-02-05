@@ -40,14 +40,14 @@ export default function IntakePage() {
     <div className="space-y-8">
       <div>
         <h2 className="text-2xl font-bold mb-2">Document Intake</h2>
-        <p className="text-gray-400">
+        <p className="text-fe-light-grey/60">
           Upload RFP/RFI documents. The system will classify content, extract
           requirements, and map them to proposal sections.
         </p>
       </div>
 
       {/* Upload zone */}
-      <div className="border-2 border-dashed border-gray-700 rounded-xl p-12 text-center hover:border-gray-500 transition-colors">
+      <div className="border-2 border-dashed border-fe-indigo/20 rounded-xl p-12 text-center hover:border-fe-indigo/40 transition-colors">
         <input
           type="file"
           multiple
@@ -62,7 +62,7 @@ export default function IntakePage() {
         >
           <div className="text-4xl">+</div>
           <div className="text-lg font-medium">Drop documents here</div>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-fe-light-grey/50">
             PDF, DOCX, XLSX, PPTX — RFPs, addenda, past proposals, score sheets
           </div>
         </label>
@@ -75,19 +75,19 @@ export default function IntakePage() {
             <span
               className={`inline-block w-2 h-2 rounded-full ${
                 state.status === "done"
-                  ? "bg-green-500"
+                  ? "bg-fe-mint"
                   : state.status === "error"
-                    ? "bg-red-500"
-                    : "bg-yellow-500 animate-pulse"
+                    ? "bg-fe-coral"
+                    : "bg-fe-lemon animate-pulse"
               }`}
             />
-            <span className="text-gray-300 capitalize">{state.status}</span>
+            <span className="text-fe-light-grey/80 capitalize">{state.status}</span>
           </div>
 
           {state.warnings.map((w, i) => (
             <div
               key={i}
-              className="text-sm text-yellow-400/80 bg-yellow-400/10 rounded px-3 py-2"
+              className="text-sm text-fe-lemon/80 bg-fe-lemon/10 rounded px-3 py-2"
             >
               {w}
             </div>
@@ -96,48 +96,48 @@ export default function IntakePage() {
       )}
 
       {/* Classification pipeline overview */}
-      <div className="border border-gray-800 rounded-lg p-6">
-        <h3 className="font-semibold mb-4">Classification Pipeline</h3>
-        <ol className="text-sm text-gray-400 space-y-3">
+      <div className="border border-fe-indigo/15 rounded-lg p-6">
+        <h3 className="font-semibold mb-4 font-fe-primary">Classification Pipeline</h3>
+        <ol className="text-sm text-fe-light-grey/60 space-y-3">
           <li className="flex gap-3">
-            <span className="text-gray-600 font-mono w-6">1.</span>
+            <span className="text-fe-indigo/40 font-mono w-6">1.</span>
             <div>
-              <span className="text-gray-300">Extract text</span> — MCP
+              <span className="text-fe-light-grey/80">Extract text</span> — MCP
               server parses PDF/DOCX/XLSX/PPTX via document tools
             </div>
           </li>
           <li className="flex gap-3">
-            <span className="text-gray-600 font-mono w-6">2.</span>
+            <span className="text-fe-indigo/40 font-mono w-6">2.</span>
             <div>
-              <span className="text-gray-300">Classify pages</span> — Keyword
+              <span className="text-fe-light-grey/80">Classify pages</span> — Keyword
               classifier assigns primary label from 9-label taxonomy
             </div>
           </li>
           <li className="flex gap-3">
-            <span className="text-gray-600 font-mono w-6">3.</span>
+            <span className="text-fe-indigo/40 font-mono w-6">3.</span>
             <div>
-              <span className="text-gray-300">Detect overlays</span> — Domain,
+              <span className="text-fe-light-grey/80">Detect overlays</span> — Domain,
               pricing flag, confidence level
             </div>
           </li>
           <li className="flex gap-3">
-            <span className="text-gray-600 font-mono w-6">4.</span>
+            <span className="text-fe-indigo/40 font-mono w-6">4.</span>
             <div>
-              <span className="text-gray-300">Extract requirements</span> —
+              <span className="text-fe-light-grey/80">Extract requirements</span> —
               Numbered items, questions, compliance matrix rows
             </div>
           </li>
           <li className="flex gap-3">
-            <span className="text-gray-600 font-mono w-6">5.</span>
+            <span className="text-fe-indigo/40 font-mono w-6">5.</span>
             <div>
-              <span className="text-gray-300">Map to sections</span> — Route
+              <span className="text-fe-light-grey/80">Map to sections</span> — Route
               requirements to backend's 9-section proposal structure
             </div>
           </li>
           <li className="flex gap-3">
-            <span className="text-gray-600 font-mono w-6">6.</span>
+            <span className="text-fe-indigo/40 font-mono w-6">6.</span>
             <div>
-              <span className="text-gray-300">Refine with LLM</span> — Langbase
+              <span className="text-fe-light-grey/80">Refine with LLM</span> — Langbase
               pipe resolves low-confidence classifications
             </div>
           </li>
@@ -154,12 +154,12 @@ export default function IntakePage() {
         ].map((f) => (
           <div
             key={f.format}
-            className="border border-gray-800 rounded p-3"
+            className="border border-fe-indigo/15 rounded p-3"
           >
-            <div className="font-mono font-medium text-gray-300">
+            <div className="font-mono font-medium text-fe-light-grey/80">
               {f.format}
             </div>
-            <div className="text-gray-500 text-xs mt-1">{f.desc}</div>
+            <div className="text-fe-light-grey/50 text-xs mt-1">{f.desc}</div>
           </div>
         ))}
       </div>

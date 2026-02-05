@@ -13,17 +13,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-gray-950 text-gray-100 antialiased">
+      <body className="bg-fe-midnight text-white antialiased font-fe-secondary">
         <div className="min-h-screen flex flex-col">
-          <header className="border-b border-gray-800 px-6 py-4">
+          <header className="border-b border-fe-indigo/20 px-6 py-4">
             <div className="flex items-center justify-between max-w-7xl mx-auto">
-              <h1 className="text-lg font-semibold tracking-tight">
+              <h1 className="text-lg font-bold tracking-tight font-fe-primary">
                 Foundever Proposal Engine
               </h1>
-              <nav className="flex gap-6 text-sm text-gray-400">
-                <a href="/" className="hover:text-white">Projects</a>
-                <a href="/intake" className="hover:text-white">Intake</a>
-                <a href="/review" className="hover:text-white">Review</a>
+              <nav className="flex gap-6 text-sm text-fe-light-grey/70">
+                <a href="/" className="hover:text-fe-indigo transition-colors">Projects</a>
+                <a href="/intake" className="hover:text-fe-indigo transition-colors">Intake</a>
+                <a href="/review" className="hover:text-fe-indigo transition-colors">Review</a>
               </nav>
             </div>
           </header>

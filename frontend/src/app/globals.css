@@ -1,1 +1,26 @@
 @import "tailwindcss";
+
+/*
+ * Foundever Brand Design Tokens
+ * From: Foundever Brand Graphic Guidelines 2024
+ * Color system: 60/30/10 rule
+ */
+
+@theme {
+  /* ── Main color ────────────────────────────────────── */
+  --color-fe-indigo: #4b4bf9;
+
+  /* ── Neutral colors ────────────────────────────────── */
+  --color-fe-midnight: #09092d;
+  --color-fe-light-grey: #f3f3f7;
+
+  /* ── Accent colors (use ONE per layout) ────────────── */
+  --color-fe-lemon: #f9ef77;
+  --color-fe-coral: #ff8d96;
+  --color-fe-lavender: #bfa1ff;
+  --color-fe-mint: #8bf0bb;
+
+  /* ── Typography ────────────────────────────────────── */
+  --font-fe-primary: 'Foundever Sans', sans-serif;
+  --font-fe-secondary: 'Calibri', sans-serif;
+}
