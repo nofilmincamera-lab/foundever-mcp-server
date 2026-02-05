@@ -144,35 +144,30 @@ foundever-mcp-server/
 │   ├── main.py                 # CLI interface
 │   └── __init__.py
 │
+├── prompts/                     # System prompts (loaded by config.py)
+│   ├── foundever_voice_system.txt    # Main voice model prompt
+│   ├── fact_check_system.txt         # Fact-checking prompt
+│   ├── fact_check_user.txt           # User fact-check template
+│   ├── proposal_generation.txt       # Proposal generation
+│   ├── voice_conversion.txt          # Marketing→practitioner
+│   ├── claim_enrichment.txt          # Evidence enrichment
+│   └── README.md                     # Prompt documentation
+│
 ├── scripts/                     # Management scripts
 │   ├── setup.sh                # Initial setup
 │   ├── foundever_load_model.sh # Model loader
-│   ├── foundever_model_manager.sh # Interactive model manager
-│   ├── start_server.sh         # Start MCP server
-│   └── FOUNDEVER_MODELS_README.md # Model documentation
-│
-├── models/                      # Model information
-│   ├── README.md               # Model details
-│   ├── Modelfile.q5           # Ollama Q5_K_M config
-│   └── Modelfile.f16          # Ollama F16 config
+│   └── foundever_model_manager.sh # Interactive model manager
 │
 ├── config/                      # Configuration files
-│   ├── mcp_config.json         # MCP server config
-│   ├── claude_desktop_config.json # Claude Desktop config
-│   └── qdrant_config.yaml      # Qdrant settings
+│   └── claude_desktop_config.json # Claude Desktop config
 │
-├── docs/                        # Documentation
-│   ├── DOCUMENTATION.md        # Complete technical docs
-│   ├── README.md               # Original readme
-│   ├── API.md                  # API reference
-│   ├── TOOLS.md                # Tool descriptions
-│   ├── TRAINING.md             # Model training guide
-│   └── DEPLOYMENT.md           # Production deployment
-│
-└── tests/                       # Test suite
-    ├── test_mcp_server.py
-    ├── test_enrichment.py
-    └── test_search.py
+└── archive/                     # Supporting materials (not served by MCP)
+    ├── README.md               # Archive documentation
+    ├── docs/                   # Complete documentation suite
+    ├── utils/                  # Development utilities
+    ├── tests/                  # Test suite (placeholder)
+    ├── models/                 # Model documentation
+    └── QUICKSTART.md           # Quick setup guide
 ```
 
 ## MCP Tools (33 Total)
@@ -316,11 +311,11 @@ The server can be exposed via Tailscale + Caddy:
 
 ## Documentation
 
-- [Complete Documentation](docs/DOCUMENTATION.md) - Full technical reference
-- [API Reference](docs/API.md) - MCP API endpoints
-- [Tool Reference](docs/TOOLS.md) - All 33 tools detailed
-- [Training Guide](docs/TRAINING.md) - Model training process
-- [Model README](scripts/FOUNDEVER_MODELS_README.md) - Model management
+- [Complete Documentation](archive/docs/DOCUMENTATION.md) - Full technical reference
+- [Quick Start Guide](archive/QUICKSTART.md) - 5-minute setup
+- [Prompts Reference](prompts/README.md) - System prompts documentation
+- [Model Documentation](archive/models/README.md) - Model specifications
+- [Archive Contents](archive/README.md) - Supporting materials
 
 ## Troubleshooting
 

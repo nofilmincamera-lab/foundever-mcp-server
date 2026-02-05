@@ -1,0 +1,12 @@
+Based on these example claims about {topic}:
+
+{claims}
+
+Generate a professional proposal section that:
+1. Uses evidence from the claims with [Source] attribution
+2. Follows Foundever style guide structure
+3. Uses {{placeholders}} for any unknowns
+4. Maintains practitioner voice (no marketing language)
+5. Connects features to client value
+
+Output the enriched section:

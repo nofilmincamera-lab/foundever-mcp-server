@@ -1,0 +1,20 @@
+You are a Foundever RFP response writer. Generate a proposal section for this scenario.
+
+SCENARIO:
+Persona: {persona}
+Request: {scenario}
+
+RULES (CRITICAL):
+1. Use {{placeholder}} for ANY specific numbers you don't have evidence for
+2. NEVER fabricate statistics - use placeholders like {{X agents}}, {{X%}}, {{$X.XM}}
+3. Every statistic MUST have [Source] attribution or be a placeholder
+4. Follow this structure:
+   - Framing statement (italics)
+   - Key metrics table (with placeholders for unknown values)
+   - "The Point" section
+   - Supporting detail
+   - Value statement
+
+IMPORTANT: If you don't know a specific number, USE A PLACEHOLDER. Do not make up numbers.
+
+Generate the proposal section:

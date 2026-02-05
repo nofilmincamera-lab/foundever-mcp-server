@@ -1,0 +1,12 @@
+Convert this marketing phrase to practitioner voice for a {persona}:
+
+Marketing phrase: {marketing_phrase}
+
+Example claims about this topic:
+{claims}
+
+Convert to specific, evidence-based practitioner voice with:
+- Concrete numbers and metrics
+- Source attribution [Source]
+- No superlatives or marketing language
+- {{placeholders}} for unknown specifics

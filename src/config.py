@@ -5,6 +5,15 @@ Variable-based configuration for RFP style guide enrichment.
 Uses personas instead of specific client names.
 """
 
+from pathlib import Path
+
+
+def load_prompt(prompt_name: str) -> str:
+    """Load a prompt from the prompts/ directory."""
+    prompt_path = Path(__file__).parent.parent / "prompts" / f"{prompt_name}.txt"
+    with open(prompt_path, 'r', encoding='utf-8') as f:
+        return f.read()
+
 # =============================================================================
 # CRITICAL DIRECTIVE: STYLE GUIDE IS PRIMARY AUTHORITY
 # =============================================================================
@@ -56,67 +65,12 @@ LLM_MODEL = "gpt-oss:120b-analytics"  # Main model for complex tasks
 FACT_CHECK_MODEL = "qwen2.5:32b"  # Faster model for fact-checking (20GB vs 65GB)
 FOUNDEVER_VOICE_MODEL = "foundever-voice:latest"  # Fine-tuned Qwen2.5-32B for Foundever RFP voice
 
-# Foundever Voice Model Prompt
-FOUNDEVER_VOICE_SYSTEM_PROMPT = """You are a Foundever RFP response assistant. You write in Foundever's professional voice, using specific patterns:
-- Confirmation syntax for acknowledging requirements
-- Value bridges connecting features to client benefits
-- So-what closes summarizing value propositions
-Always use {{placeholders}} for specific client data you don't have."""
+# Foundever Voice Model Prompt (loaded from prompts/)
+FOUNDEVER_VOICE_SYSTEM_PROMPT = load_prompt("foundever_voice_system")
 
-# Fact-Check LLM Prompts
-FACT_CHECK_SYSTEM_PROMPT = """You are a rigorous fact-checker for RFP proposals. Your job is to identify:
-
-1. FABRICATED STATISTICS - Numbers that appear invented (no source, suspiciously precise, round numbers)
-2. PRICING VIOLATIONS - ANY mention of costs, prices, savings, rates, or budgets - even as placeholders like {{$X.XM}}
-3. UNSOURCED FACTUAL CLAIMS - Statistics, metrics, outcomes, or comparatives without attribution
-4. MISSING PLACEHOLDERS - Specific facts that should be placeholders but aren't
-
-IMPORTANT DISTINCTIONS:
-
-**Needs Source (flag if missing):**
-- Statistics: "99.2% accuracy", "2,500 agents"
-- Metrics: "reduced AHT by 23%"
-- Comparatives: "industry-leading", "best-in-class"
-- Outcomes: "achieved $47M in recoveries"
-- Client specifics: "supporting 4 of top 10 banks"
-
-**Does NOT need source (do NOT flag):**
-- Narrative framing: "In today's competitive landscape..."
-- Logical transitions: "This approach enables..."
-- General principles: "Compliance is essential for..."
-- Value propositions: "Our solution will help you..."
-- Conditional statements: "If implemented, this could..."
-
-**PRICING - ABSOLUTE VIOLATION (always flag):**
-- Any dollar amounts: $X, $5.5K, $X.XM
-- Cost/savings mentions: "save money", "cost reduction", "estimated savings"
-- Rate references: "hourly rate", "per-FTE cost"
-- Even placeholders: {{$X.XM}}, {{cost savings}}, {{Estimated Cost}}
-
-Output JSON format:
-{
-  "fabricated_stats": ["list of fabricated numbers without sources"],
-  "pricing_violations": ["list of ANY cost/price/savings mentions"],
-  "unsourced_claims": ["list of factual claims needing sources - NOT narrative framing"],
-  "missing_placeholders": ["list of facts that should be {{placeholder}} format"],
-  "style_violations": ["list of marketing voice or anti-pattern issues"],
-  "overall_score": 1-10,
-  "pass_fail": "PASS or FAIL",
-  "summary": "brief explanation"
-}
-
-PASS if: No fabrications, no pricing violations, <5 minor issues
-FAIL if: Any fabrications, any pricing violations, or >5 issues"""
-
-FACT_CHECK_USER_PROMPT = """Review this content for fabricated or unsourced information.
-
-CONTENT TO CHECK:
-{content}
-
-EVIDENCE THAT WAS ACTUALLY FOUND (if any):
-{evidence}
-
-Check every statistic, percentage, count, and specific claim. Flag anything without proper [Source] attribution."""
+# Fact-Check LLM Prompts (loaded from prompts/)
+FACT_CHECK_SYSTEM_PROMPT = load_prompt("fact_check_system")
+FACT_CHECK_USER_PROMPT = load_prompt("fact_check_user")
 
 # Client Personas (used instead of actual client names)
 CLIENT_PERSONAS = {

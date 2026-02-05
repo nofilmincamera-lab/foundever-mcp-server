@@ -1,0 +1,9 @@
+Review this content for fabricated or unsourced information.
+
+CONTENT TO CHECK:
+{content}
+
+EVIDENCE THAT WAS ACTUALLY FOUND (if any):
+{evidence}
+
+Check every statistic, percentage, count, and specific claim. Flag anything without proper [Source] attribution.
