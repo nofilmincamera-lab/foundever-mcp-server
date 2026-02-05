@@ -43,6 +43,7 @@ from config import (
 from search import get_searcher, SearchResult
 from enrichment_engine import get_enricher
 from document_tools import DOCUMENT_TOOLS, handle_document_tool
+from pptx_tools import PPTX_TOOLS, handle_pptx_tool
 import re
 import httpx
 import psycopg2
@@ -1074,6 +1075,11 @@ async def handle_tool_call(name: str, arguments: Dict[str, Any]) -> str:
         doc_result = await handle_document_tool(name, arguments)
         if doc_result is not None:
             return doc_result
+
+        # Try PPTX / slide library tools
+        pptx_result = await handle_pptx_tool(name, arguments)
+        if pptx_result is not None:
+            return pptx_result
 
         if name == "search_claims":
             searcher = get_lazy_searcher()
@@ -3163,7 +3169,7 @@ mcp_server = Server("style-guide-enrichment")
 @mcp_server.list_tools()
 async def list_tools() -> list[Tool]:
     """List available tools."""
-    return TOOLS + DOCUMENT_TOOLS
+    return TOOLS + DOCUMENT_TOOLS + PPTX_TOOLS
 
 
 @mcp_server.call_tool()
@@ -3198,9 +3204,10 @@ def create_sse_app():
         return JSONResponse({
             "status": "ok",
             "server": "style-guide-enrichment",
-            "tools": len(TOOLS) + len(DOCUMENT_TOOLS),
+            "tools": len(TOOLS) + len(DOCUMENT_TOOLS) + len(PPTX_TOOLS),
             "style_guide_tools": len(TOOLS),
             "document_tools": len(DOCUMENT_TOOLS),
+            "pptx_tools": len(PPTX_TOOLS),
             "personas": len(CLIENT_PERSONAS),
             "domains": len(BUYER_DOMAIN_TAXONOMY)
         })
@@ -3208,10 +3215,11 @@ def create_sse_app():
     async def handle_info(request):
         return JSONResponse({
             "name": "Style Guide Enrichment MCP Server",
-            "version": "1.1.0",
-            "description": "Enriches Foundever RFP style guides with Qdrant evidence. Includes document skills (PDF, XLSX, DOCX, PPTX).",
-            "tools": [t.name for t in TOOLS + DOCUMENT_TOOLS],
+            "version": "1.2.0",
+            "description": "Enriches Foundever RFP style guides with Qdrant evidence. Includes document skills (PDF, XLSX, DOCX, PPTX) and slide library / PPTX generation tools.",
+            "tools": [t.name for t in TOOLS + DOCUMENT_TOOLS + PPTX_TOOLS],
             "document_tools": [t.name for t in DOCUMENT_TOOLS],
+            "pptx_tools": [t.name for t in PPTX_TOOLS],
             "personas": list(CLIENT_PERSONAS.keys()),
             "domains": list(BUYER_DOMAIN_TAXONOMY.keys()),
             "mcp_endpoint": "/mcp/messages"

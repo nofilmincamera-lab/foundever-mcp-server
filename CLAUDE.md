@@ -2,19 +2,22 @@
 
 ## Project Overview
 
-Foundever MCP Server is a Python-based Model Context Protocol (MCP) server that integrates with Claude Desktop for enterprise RFP (Request for Proposal) response generation. It provides 33 specialized tools for semantic search across 600K+ evidence claims, style-guide-enforced proposal writing, LLM-powered fact-checking, and document parsing.
+Foundever MCP Server is a Python-based Model Context Protocol (MCP) server that integrates with Claude Desktop for enterprise RFP (Request for Proposal) response generation. It provides 41+ specialized tools for semantic search across 600K+ evidence claims, style-guide-enforced proposal writing, LLM-powered fact-checking, document parsing, slide library management, and PPTX proposal deck generation.
 
 ## Repository Structure
 
 ```
 foundever-mcp-server/
 ├── src/                          # Python MCP server (backend)
-│   ├── mcp_server.py             # Main MCP server - 33 tool definitions & handlers (3,228 lines)
+│   ├── mcp_server.py             # Main MCP server - 41+ tool definitions & handlers
 │   ├── config.py                 # Centralized configuration, data structures, prompt loading
 │   ├── search.py                 # Qdrant vector search engine (StyleGuideSearcher)
 │   ├── enrichment_engine.py      # Evidence enrichment engine (StyleGuideEnricher)
 │   ├── embedder.py               # E5-Mistral-7B embedding singleton (StyleGuideEmbedder)
 │   ├── document_tools.py         # RFP document parsing (Word, Excel, PDF, PPTX)
+│   ├── slide_library.py          # Slide library indexing, search, classification
+│   ├── pptx_builder.py           # PPTX generation engine (template analysis, deck assembly)
+│   ├── pptx_tools.py             # MCP tool definitions for slide library & PPTX builder
 │   ├── main.py                   # CLI interface for testing (not used by MCP server)
 │   └── __init__.py               # Package exports
 ├── frontend/                     # Next.js proposal engine (frontend)
@@ -22,7 +25,8 @@ foundever-mcp-server/
 │   │   ├── app/                  # Next.js App Router pages
 │   │   │   ├── layout.tsx        # Root layout with navigation
 │   │   │   ├── page.tsx          # Dashboard: projects, sections, taxonomy
-│   │   │   └── intake/page.tsx   # Document upload and classification UI
+│   │   │   ├── intake/page.tsx   # Document upload and classification UI
+│   │   │   └── export/page.tsx   # PPTX export: library browse, deck assembly
 │   │   ├── lib/
 │   │   │   ├── classification/   # 3-layer document classification model
 │   │   │   │   ├── types.ts      # TypeScript types for all 3 layers
@@ -34,7 +38,7 @@ foundever-mcp-server/
 │   │   │   │   ├── intake.ts     # Upload → extract → classify → map flow
 │   │   │   │   └── index.ts
 │   │   │   ├── mcp/              # MCP server HTTP client
-│   │   │   │   └── client.ts     # REST client for 33 backend tools
+│   │   │   │   └── client.ts     # REST client for 41+ backend tools
 │   │   │   └── langbase/         # Langbase orchestration client
 │   │   │       └── client.ts     # Pipes (agents) + Memory (RAG) client
 │   │   ├── components/           # React components (TBD)
@@ -65,7 +69,8 @@ foundever-mcp-server/
 - **Vector DB:** Qdrant (`localhost:6333`) with collections `claims` (600K+) and `unified_chunks` (135K)
 - **LLMs:** Ollama (`localhost:11434`) serving `foundever-voice:latest`, `qwen2.5:32b`, `gpt-oss:120b-analytics`
 - **Database:** PostgreSQL (`localhost:5432/bpo_enrichment`) for pattern storage
-- **Document parsing:** `python-docx`, `openpyxl`, `PyPDF2`, `python-pptx`
+- **Document parsing:** `python-docx`, `openpyxl`, `PyPDF2`, `pdfplumber`, `python-pptx`
+- **PPTX generation:** `python-pptx` (cross-platform, no COM/Windows dependency)
 - **HTTP client:** `httpx` (async)
 - **GPU:** RTX 6000 PRO Blackwell (96GB VRAM) running all models simultaneously
 
@@ -95,7 +100,7 @@ foundever-mcp-server/
 ┌────────┐ ┌─────────┐ ┌──────────┐
 │Langbase│ │MCP Srvr │ │Perplexity│
 │ Pipes  │ │ (:8420) │ │   API    │
-│ Memory │ │33 tools │ │Sonar Pro │
+│ Memory │ │41 tools │ │Sonar Pro │
 └────────┘ └────┬────┘ └──────────┘
                 │
          ┌──────┼──────┐
@@ -155,7 +160,28 @@ bash scripts/setup.sh
 - Parses `.docx`, `.xlsx`, `.pdf` for RFP input
 - Auto-saves extracted data to PostgreSQL
 
-## MCP Tools (33 total, 7 categories)
+### `src/slide_library.py` (slide library manager)
+- `SlideLibraryManager` indexes theme-organized slide directories
+- Classifies slides to 3-layer taxonomy using keyword matching
+- Resolves `operational_details` fan-out to specific backend sections
+- Search by keyword, theme, label, or backend section
+- `select_slides_for_proposal()` picks best slides per section
+
+### `src/pptx_builder.py` (PPTX generation)
+- `analyze_template()` discovers layouts and placeholders (cross-platform, no COM)
+- `ProposalDeckBuilder` orchestrates full proposal deck assembly
+- Template-first workflow: analyze → populate → assemble → save
+- `parse_formatted_text()` converts HTML-like tags to python-pptx runs
+- `clone_slide_from_file()` copies slides from library into target deck
+- Speaker notes for traceability (evidence IDs, proof tiers, sources)
+- Brand colors from `BRAND_COLORS` dict (matches frontend tokens)
+
+### `src/pptx_tools.py` (PPTX MCP tools)
+- 8 MCP tool definitions + handlers for slide library and PPTX builder
+- Follows same dispatch pattern as `document_tools.py`
+- Active deck state managed at module level (`_active_builder`)
+
+## MCP Tools (41+ total, 9 categories)
 
 | Category | Tools | Purpose |
 |----------|-------|---------|
@@ -166,6 +192,8 @@ bash scripts/setup.sh
 | RFP Input | `parse_rfp_requirements`, `generate_clarifying_questions`, `map_to_style_guide_structure`, `track_assumptions`, document parsing tools | Document processing |
 | Financial Services | `get_finserv_persona`, `get_threat_context`, `get_finserv_metrics` | Domain expertise |
 | Generation | `generate_rfp_response` | LLM-powered proposal writing |
+| Slide Library | `index_slide_library`, `search_slide_library`, `get_slide_library_stats` | Theme-organized reference slides |
+| PPTX Builder | `analyze_pptx_template`, `create_proposal_deck`, `add_proposal_slide`, `clone_library_slide`, `save_proposal_deck` | Proposal deck assembly & export |
 
 ## Code Conventions
 
@@ -303,3 +331,54 @@ The FE's `map_to_style_guide_structure` backend tool provides the canonical 9-se
 1. Create the pipe in the Langbase dashboard (or via API)
 2. Add a convenience method in `frontend/src/lib/langbase/client.ts`
 3. Call it from the appropriate document skill or page component
+
+### Adding a slide library theme
+1. Create a folder in the slide library root with the theme name
+2. Add `.pptx` files (individual slides or multi-slide decks)
+3. Add matching `.txt` files with OCR text extracts (same base name)
+4. Optionally add `.png` thumbnails and `.json` metadata files
+5. Re-run `index_slide_library` to pick up the new theme
+
+### Adding a PPTX builder tool
+1. Define the `Tool()` object in `src/pptx_tools.py` (add to `PPTX_TOOLS` list)
+2. Add the handler function (prefixed with `_handle_`)
+3. Register in `handle_pptx_tool()` dispatch
+4. Add convenience method in `frontend/src/lib/mcp/client.ts`
+
+### Customizing slide deck assembly
+- Template analysis is in `src/pptx_builder.py` (`analyze_template()`)
+- Placeholder population uses `_apply_segments_to_text_frame()`
+- Brand colors are in `BRAND_COLORS` dict (sync with `frontend/src/lib/brand/tokens.ts`)
+- Section ordering is in `ProposalDeckBuilder.build_full_proposal()`
+
+## PPTX Generation Pipeline
+
+```
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│ Slide Library│     │  MCP Content │     │   PPTX       │
+│ (themes/     │     │  Generation  │     │   Builder    │
+│  .pptx+.txt) │     │  (33 tools)  │     │              │
+└──────┬───────┘     └──────┬───────┘     └──────┬───────┘
+       │                    │                    │
+       ▼                    ▼                    ▼
+  index_slide_       generate_rfp_        create_proposal_
+  library            response             deck
+       │                    │                    │
+       ▼                    ▼                    ▼
+  search_slide_      (content ready)      add_proposal_slide
+  library                                 clone_library_slide
+       │                                         │
+       ▼                                         ▼
+  clone_library_                          save_proposal_deck
+  slide                                   → output.pptx
+```
+
+### Typical workflow:
+1. `index_slide_library` → scan theme folders, classify slides
+2. `search_slide_library` → find reference slides for each section
+3. `create_proposal_deck` → blank or from branded template
+4. For each section:
+   a. `generate_rfp_response` → generate content from evidence
+   b. `add_proposal_slide` → populate slide with formatted content + notes
+   c. OR `clone_library_slide` → pull reference slide from library
+5. `save_proposal_deck` → export to `.pptx`

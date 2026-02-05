@@ -21,8 +21,10 @@ pandas>=2.0.0
 
 # Document Processing
 python-docx>=0.8.11
+python-pptx>=0.6.21
 openpyxl>=3.1.0
 PyPDF2>=3.0.0
+pdfplumber>=0.10.0
 
 # Utilities
 python-dotenv>=1.0.0

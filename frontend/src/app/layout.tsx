@@ -23,6 +23,7 @@ export default function RootLayout({
               <nav className="flex gap-6 text-sm text-fe-light-grey/70">
                 <a href="/" className="hover:text-fe-indigo transition-colors">Projects</a>
                 <a href="/intake" className="hover:text-fe-indigo transition-colors">Intake</a>
+                <a href="/export" className="hover:text-fe-indigo transition-colors">Export</a>
                 <a href="/review" className="hover:text-fe-indigo transition-colors">Review</a>
               </nav>
             </div>

@@ -1,11 +1,16 @@
 /**
  * MCP Server Client
  * =================
- * HTTP client for calling the Python MCP server's 33 tools.
+ * HTTP client for calling the Python MCP server's 41 tools.
  * The MCP server runs on localhost:8420 with both MCP/SSE and REST endpoints.
  *
  * This client uses the REST convenience endpoint (/tools/{tool_name})
  * for direct tool calls from the frontend, bypassing the SSE protocol.
+ *
+ * Tool categories:
+ *   - 33 core tools (search, enrichment, style guide, generation, etc.)
+ *   - 15 document tools (PDF, DOCX, XLSX, PPTX parsing)
+ *   - 8 PPTX tools (slide library, template analysis, deck building)
  */
 
 export interface MCPClientConfig {
@@ -151,6 +156,80 @@ export class MCPClient {
     return this.callTool("map_to_style_guide_structure", {
       requirements,
       persona,
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Slide Library tools
+  // -------------------------------------------------------------------------
+
+  /** Index a slide library directory */
+  async indexSlideLibrary(libraryPath: string): Promise<string> {
+    return this.callTool("index_slide_library", {
+      library_path: libraryPath,
+    });
+  }
+
+  /** Search the indexed slide library */
+  async searchSlideLibrary(query: string, options?: {
+    limit?: number;
+    theme_filter?: string;
+    label_filter?: string;
+    section_filter?: string;
+  }): Promise<string> {
+    return this.callTool("search_slide_library", { query, ...options });
+  }
+
+  /** Get slide library statistics */
+  async getSlideLibraryStats(): Promise<string> {
+    return this.callTool("get_slide_library_stats", {});
+  }
+
+  // -------------------------------------------------------------------------
+  // PPTX Builder tools
+  // -------------------------------------------------------------------------
+
+  /** Analyze a PPTX/POTX template */
+  async analyzePptxTemplate(filePath: string): Promise<string> {
+    return this.callTool("analyze_pptx_template", { file_path: filePath });
+  }
+
+  /** Create a new proposal deck */
+  async createProposalDeck(options?: {
+    template_path?: string;
+    title?: string;
+    subtitle?: string;
+  }): Promise<string> {
+    return this.callTool("create_proposal_deck", options ?? {});
+  }
+
+  /** Add a content slide to the active deck */
+  async addProposalSlide(params: {
+    section_type: string;
+    title: string;
+    body: string;
+    speaker_notes?: string;
+    table_data?: string[][];
+    add_divider?: boolean;
+  }): Promise<string> {
+    return this.callTool("add_proposal_slide", params);
+  }
+
+  /** Clone a slide from the library into the active deck */
+  async cloneLibrarySlide(slideId: string, options?: {
+    source_slide_index?: number;
+    speaker_notes?: string;
+  }): Promise<string> {
+    return this.callTool("clone_library_slide", {
+      slide_id: slideId,
+      ...options,
+    });
+  }
+
+  /** Save the active proposal deck */
+  async saveProposalDeck(outputPath: string): Promise<string> {
+    return this.callTool("save_proposal_deck", {
+      output_path: outputPath,
     });
   }
 }
