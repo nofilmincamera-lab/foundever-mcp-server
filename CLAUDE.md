@@ -8,59 +8,101 @@ Foundever MCP Server is a Python-based Model Context Protocol (MCP) server that 
 
 ```
 foundever-mcp-server/
-├── src/                          # All Python source code
+├── src/                          # Python MCP server (backend)
 │   ├── mcp_server.py             # Main MCP server - 33 tool definitions & handlers (3,228 lines)
 │   ├── config.py                 # Centralized configuration, data structures, prompt loading
 │   ├── search.py                 # Qdrant vector search engine (StyleGuideSearcher)
 │   ├── enrichment_engine.py      # Evidence enrichment engine (StyleGuideEnricher)
 │   ├── embedder.py               # E5-Mistral-7B embedding singleton (StyleGuideEmbedder)
-│   ├── document_tools.py         # RFP document parsing (Word, Excel, PDF)
+│   ├── document_tools.py         # RFP document parsing (Word, Excel, PDF, PPTX)
 │   ├── main.py                   # CLI interface for testing (not used by MCP server)
 │   └── __init__.py               # Package exports
+├── frontend/                     # Next.js proposal engine (frontend)
+│   ├── src/
+│   │   ├── app/                  # Next.js App Router pages
+│   │   │   ├── layout.tsx        # Root layout with navigation
+│   │   │   ├── page.tsx          # Dashboard: projects, sections, taxonomy
+│   │   │   └── intake/page.tsx   # Document upload and classification UI
+│   │   ├── lib/
+│   │   │   ├── classification/   # 3-layer document classification model
+│   │   │   │   ├── types.ts      # TypeScript types for all 3 layers
+│   │   │   │   ├── taxonomy.ts   # Canonical labels from 1,000-slide corpus
+│   │   │   │   ├── mapping.ts    # FE labels → backend 9-section mapping
+│   │   │   │   ├── classifier.ts # Keyword + LLM classification engine
+│   │   │   │   └── index.ts      # Public API
+│   │   │   ├── document-skills/  # Document intake pipeline
+│   │   │   │   ├── intake.ts     # Upload → extract → classify → map flow
+│   │   │   │   └── index.ts
+│   │   │   ├── mcp/              # MCP server HTTP client
+│   │   │   │   └── client.ts     # REST client for 33 backend tools
+│   │   │   └── langbase/         # Langbase orchestration client
+│   │   │       └── client.ts     # Pipes (agents) + Memory (RAG) client
+│   │   ├── components/           # React components (TBD)
+│   │   └── types/                # Shared types (TBD)
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── next.config.ts            # Proxies /api/mcp/* → localhost:8420
 ├── prompts/                      # External prompt files loaded at startup
-│   ├── foundever_voice_system.txt  # Foundever Voice model system prompt
-│   ├── fact_check_system.txt       # Fact-checking system prompt
-│   ├── fact_check_user.txt         # Fact-checking user template ({content}, {evidence})
-│   ├── claim_enrichment.txt        # Evidence enrichment prompt
-│   ├── proposal_generation.txt     # RFP generation prompt (testing)
-│   └── voice_conversion.txt        # Marketing-to-practitioner voice prompt
+│   ├── foundever_voice_system.txt
+│   ├── fact_check_system.txt
+│   ├── fact_check_user.txt
+│   ├── claim_enrichment.txt
+│   ├── proposal_generation.txt
+│   └── voice_conversion.txt
 ├── scripts/                      # Setup and model management scripts
-│   ├── setup.sh                  # Installation script (Python 3.10+, venv, deps)
-│   ├── foundever_load_model.sh   # Load Foundever Voice model into Ollama
-│   └── foundever_model_manager.sh  # Interactive model manager
 ├── config/                       # Runtime configuration
-│   └── claude_desktop_config.json  # Claude Desktop MCP server config
-├── archive/                      # Archived docs and utilities (not served)
-├── ARCHITECTURE.md               # Comprehensive architecture documentation
-├── TOOLS_QUICK_REFERENCE.md      # Quick reference for all 33 MCP tools
-├── LOADING_BEHAVIOR.md           # Model pre-loading behavior documentation
-├── STARTUP_INSTRUCTIONS.md       # Server startup guide
+├── archive/                      # Archived docs and utilities
 ├── requirements.txt              # Python dependencies
 └── .gitignore
 ```
 
 ## Tech Stack
 
+### Backend (Python MCP Server)
 - **Language:** Python 3.10+
 - **MCP Framework:** `mcp` >= 0.5.0 with `starlette` + `uvicorn` + `sse-starlette`
 - **Embeddings:** `intfloat/e5-mistral-7b-instruct` (4096-dim) via `transformers` / `sentence-transformers`
 - **Vector DB:** Qdrant (`localhost:6333`) with collections `claims` (600K+) and `unified_chunks` (135K)
 - **LLMs:** Ollama (`localhost:11434`) serving `foundever-voice:latest`, `qwen2.5:32b`, `gpt-oss:120b-analytics`
 - **Database:** PostgreSQL (`localhost:5432/bpo_enrichment`) for pattern storage
-- **Document parsing:** `python-docx`, `openpyxl`, `PyPDF2`
+- **Document parsing:** `python-docx`, `openpyxl`, `PyPDF2`, `python-pptx`
 - **HTTP client:** `httpx` (async)
+- **GPU:** RTX 6000 PRO Blackwell (96GB VRAM) running all models simultaneously
+
+### Frontend (Next.js Proposal Engine)
+- **Framework:** Next.js 16 + React 19 + TypeScript
+- **Styling:** Tailwind CSS v4
+- **Orchestration:** Langbase (pipes for agents, memory for per-project RAG)
+- **Research:** Perplexity API (Sonar Pro for live market intelligence, backup generation)
+- **MCP client:** REST calls to backend's `/tools/{name}` endpoint
 
 ## Architecture
 
 ```
-Claude Desktop
-    ↓ (HTTP/SSE or stdio)
-MCP Server (port 8420, src/mcp_server.py)
-    ├── Search Engine (src/search.py) → Qdrant
-    ├── Enrichment Engine (src/enrichment_engine.py)
-    ├── Embedder (src/embedder.py) → E5-Mistral-7B
-    ├── Document Tools (src/document_tools.py)
-    └── LLM calls → Ollama (foundever-voice, qwen2.5:32b)
+┌─────────────────────────────────────────┐
+│         Next.js Frontend (:3000)         │
+│  Upload → Classify → Edit → Export       │
+│  ┌─────────────────────────────────────┐ │
+│  │  Classification Model (3 layers)    │ │
+│  │  L1: Intent Groups (FE routing)     │ │
+│  │  L2: Primary Labels (9 from corpus) │ │
+│  │  L3: Overlays (domain, pricing)     │ │
+│  └─────────────┬───────────────────────┘ │
+└────────────────┼─────────────────────────┘
+                 │
+    ┌────────────┼────────────┐
+    ▼            ▼            ▼
+┌────────┐ ┌─────────┐ ┌──────────┐
+│Langbase│ │MCP Srvr │ │Perplexity│
+│ Pipes  │ │ (:8420) │ │   API    │
+│ Memory │ │33 tools │ │Sonar Pro │
+└────────┘ └────┬────┘ └──────────┘
+                │
+         ┌──────┼──────┐
+         ▼      ▼      ▼
+      Qdrant  Ollama  PostgreSQL
+      600K+   96GB    Patterns
+      claims  VRAM
 ```
 
 Models are pre-loaded at startup (`init_models()` in `mcp_server.py:60`) for instant first-call access. Startup takes 10-30 seconds, requiring 7-14 GB for the embedding model.
@@ -153,22 +195,19 @@ bash scripts/setup.sh
 ## Development Tools
 
 ```bash
-# Formatting
-black src/
+# Backend (Python)
+black src/              # Formatting
+ruff check src/         # Linting
+mypy src/               # Type checking
+pytest archive/tests/   # Tests
+python src/main.py --section "collections"  # CLI testing
 
-# Linting
-ruff check src/
-
-# Type checking
-mypy src/
-
-# Tests
-pytest archive/tests/
-
-# CLI testing (not the MCP server)
-python src/main.py --section "collections"
-python src/main.py --taxonomy
-python src/main.py --convert
+# Frontend (Next.js)
+cd frontend
+npm run dev             # Dev server with Turbopack (:3000)
+npm run build           # Production build
+npm run typecheck       # TypeScript type checking
+npm run lint            # ESLint
 ```
 
 ## External Service Dependencies
@@ -190,6 +229,44 @@ The server requires these services running locally:
 - **No-Fabrication Policy:** Strict rules against unsourced claims, fabricated statistics, unauthorized pricing, and commitment confusion. Use `{{placeholders}}` for unknown data.
 - **1-Plus Structure:** Standard proposal section format: framing -> metrics -> point -> capabilities -> differentiators -> value.
 
+## FE Classification Model (3-Layer Taxonomy)
+
+Derived from corpus analysis of ~1,000 RFP proposal slides. Lives in `frontend/src/lib/classification/`.
+
+### Layer 2 — Primary Labels (classifier output, core taxonomy)
+
+| Label | Corpus % | Description |
+|-------|----------|-------------|
+| **Operational Details** | ~47.5% | Processes, workflows, staffing, facilities, day-to-day execution |
+| **Solution Overview** | ~21% | Capabilities, offerings, platform/ecosystem summaries |
+| **Case Study** | ~11% | Client examples, outcomes, proof points |
+| **Compliance / Security** | ~7% | Certifications, regulatory frameworks, risk controls |
+| **Project Plan** | ~5.5% | Implementation, transition, timelines |
+| **Executive Summary** | ~4.5% | High-level framing, strategic overview |
+| **Other** | ~3.5% | Section dividers, low semantic payload |
+| **Pricing** | Flag-based | Orthogonal — detected as `pricingFlag`, not a primary label |
+
+### Layer 1 — Intent Groups (FE routing)
+
+| Group | Member Labels | Backend Sections |
+|-------|--------------|-----------------|
+| Narrative & Positioning | exec_summary, solution_overview | 1, 2, 3 |
+| Solution Definition | solution_overview, operational_details | 3, 4, 5 |
+| Execution & Delivery | operational_details, project_plan | 4, 7, 8 |
+| Risk & Assurance | compliance_security | 6 |
+| Proof & Validation | case_study | 9 |
+| Commercial Mechanics | pricing | (excluded from body) |
+
+### Layer 3 — Overlays (secondary attributes)
+
+- **Domain:** financial_services, banking, fintech, payments, fraud_aml_kyc, collections, insurance, healthcare, general
+- **Pricing flag:** has_pricing / pricing_adjacent / no_pricing
+- **Confidence:** high / medium / low
+
+### FE → Backend Mapping
+
+The FE's `map_to_style_guide_structure` backend tool provides the canonical 9-section structure. The FE classification maps each primary label to one or more backend sections. Key: `operational_details` (47.5% of content) fans out across delivery_model, team_leadership, solution_overview, and technology using keyword refinement in `refineToSingleSection()`.
+
 ## Common Modification Patterns
 
 ### Adding a new MCP tool
@@ -210,3 +287,19 @@ The server requires these services running locally:
 - Search logic is in `src/search.py` (`StyleGuideSearcher`)
 - Embedding logic is in `src/embedder.py` (`StyleGuideEmbedder`)
 - Proof tier weighting is applied in search result scoring
+
+### Adding a new classification label (frontend)
+1. Add the label to `PrimaryLabel` type in `frontend/src/lib/classification/types.ts`
+2. Add the label definition in `PRIMARY_LABELS` in `taxonomy.ts` (keywords, corpus stats)
+3. Add the label to an intent group in `INTENT_GROUPS` in `taxonomy.ts`
+4. Add the FE→backend mapping in `LABEL_TO_SECTIONS` in `mapping.ts`
+5. Update refinement signals in `refineToSingleSection()` if needed
+
+### Adding a new domain overlay (frontend)
+1. Add the domain to `DomainOverlay` type in `types.ts`
+2. Add the domain definition in `DOMAIN_OVERLAYS` in `taxonomy.ts` (signal keywords)
+
+### Adding a Langbase pipe (frontend)
+1. Create the pipe in the Langbase dashboard (or via API)
+2. Add a convenience method in `frontend/src/lib/langbase/client.ts`
+3. Call it from the appropriate document skill or page component
